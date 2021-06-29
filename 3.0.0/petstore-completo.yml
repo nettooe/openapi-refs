@@ -24,7 +24,7 @@ servers:
         default: "v2"
 
 tags:
-- name: "pets"
+- name: "pet"
   description: "Tudo sobre seus animais de estimação"
   externalDocs:
     description: "Para saber mais"
@@ -32,10 +32,10 @@ tags:
 
 
 paths:
-  /pets:
+  /pet:
     post:
       tags:
-      - "pets"
+      - "pet"
       summary: "Adicionar um novo animal de estimação à loja"
       description: '
       Para adicionar um novo animal de estimação (pet) na loja, é necessário respeitar alguns critérios.
@@ -83,13 +83,13 @@ paths:
                 petId: '$/response.body#/id'
               description:
                 O `id` retornado na resposta pode ser usado como
-                parâmetro `petId` em `GET /pets/{petId}`
+                parâmetro `petId` em `GET /pet/{petId}`
           headers:
             Location:
               description: "URI do objeto criado"
               style: simple
               schema:
-                example: '/pets/123'
+                example: '/pet/123'
 
         '400':
           description: "Entrada inválida"
@@ -102,10 +102,10 @@ paths:
                 pet-400-02:
                   summary: exemplo 400 com código 400102
                   value: {"code":"400101", "description":"field 'birthdate' is required"}
-  /pets/{petId}:
+  /pet/{petId}:
     put:
       tags:
-      - "pets"
+      - "pet"
       summary: "Update an existing pet"
       description: "aaaaaaa"
       operationId: "Atualiza um ou mais dados de um pet"
