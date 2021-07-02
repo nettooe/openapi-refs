@@ -1,0 +1,1217 @@
+openapi: 3.0.0
+info:
+  title: "Cart API"
+  version: "1.0.0"
+  description: "Cart API documentation"
+  termsOfService: "https://github.com/OAI/OpenAPI-Specification/blob/main/CODE_OF_CONDUCT.md"
+  contact:
+    name: Fulano de Tal
+    url: http://bitbucket.com/arquitetura/fulanodetal/master
+    email: fulano.tal@minhaempresa.com.br
+  license:
+    name: MinhaEmpresa License
+    url: https://github.com/OAI/OpenAPI-Specification/blob/main/LICENSE
+
+servers:
+  - url: https://development.api.minhaempresa.com.br/{apiversion}
+    description: Ambiente Desenvolvimento
+    variables:
+      port:
+        enum:
+          - '443'
+          - '8443'
+        default: '443'
+      apiversion:
+        default: "v2"
+  - url: https://qa.api.minhaempresa.com.br:{port}/{apiversion}
+    description: Ambiente de Testes de Qualidade
+    variables:
+      port:
+        enum:
+          - '443'
+          - '8443'
+        default: '443'
+      apiversion:
+        default: "v2"
+  - url: https://api.minhaempresa.com.br:{port}/{apiversion}
+    description: Produção
+    variables:
+      port:
+        enum:
+          - '443'
+          - '8443'
+        default: '443'
+      apiversion:
+        default: "v2"
+
+# definição dos agrupamentos de endpoints
+tags:
+  - name: "cart"
+    description: "Todas as ações relacionadas a carrinho de compras."
+    externalDocs:
+      description: "Saiba mais"
+      url: "https://minhaempresa.net/wiki/api/cart"
+
+paths:
+  /carts:
+    post:
+      tags:
+        - "cart"
+      summary: "Gravar um novo carrinho de compras."
+      description: '
+          Este endpoint permite criar um novo carrinho. É necessário respeitar os critérios para gravação:
+          <ul>
+            <li>campo "tokenValue" é obrigatório;</li>
+            <li>campo "channel" é obrigatório;</li>
+            <li>campo "locale" é obrigatório;</li>
+          </ul>
+          
+          Se o array de "items" for diferente de vazio, então são aplicadas validações em cada item. Neste caso, considere as mesma validações realizadas no endpoint "POST /carts/{token}/items"
+        '
+      operationId: "cartPickUp"
+      requestBody:
+        description: 'Abaixo está descrito um exemplo completo, mas a entidade (nova) pode começar somente com as propriedades obrigatórias, ou seja, um carrinho pode ser inicializado sem a propriedade "items" e até mesmo sem a definição da forma de pagamento.'
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/Cart'
+      responses:
+        '201':
+          description: "Esta resposta indica que o carrinho (cart) foi gravado com sucesso. Observe que, no retorno existe o campo 'tokenValue' "
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  tokenValue:
+                    type: string
+                    description: token do carrinho de compras (cart) criado.
+                example: {"tokenValue": "SDAOSLEFNWU35H3QLI5325"}
+          links:
+            GetCartByToken: #<---- nome do link é arbitrário
+              operationId: getCart
+              parameters:
+                token: '$/response.body/{token}'
+              description:
+                O `tokenValue` retornado na resposta pode ser usado como
+                parâmetro `token` em `GET /cart/{token}`
+          headers:
+            Location:
+              description: "URI do objeto criado"
+              style: simple
+              schema:
+                example: '/cart/SDAOSLEFNWU35H3QLI5325'
+
+        400:
+          description: "Entrada inválida"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+              examples:
+                cart-400-01:
+                  summary: exemplo 400 com diversos erros do tipo validação.
+                  value: {
+                    "errors": [
+                      {
+                        "error": "400-VLD-123",
+                        "message": "Campo 'tokenValue' é obrigatório."
+                      },
+                      {
+                        "error": "400-VLD-124",
+                        "message": "Campo 'channel' é obrigatório."
+                      },
+                      {
+                        "error": "400-VLD-125",
+                        "message": "Campo 'locale' é obrigatório."
+                      },
+                    ]
+                  }
+                cart-400-02:
+                  summary: exemplo 400 com erros de validação e de Regras de Negócio
+                  value: {
+                    "errors": [
+                      {
+                        "error": "400-VLD-123",
+                        "message": "Campo 'tokenValue' é obrigatório."
+                      },
+                      {
+                        "error": "400-RN-224",
+                        "message": "No endereço de entrega, o CEP deve pertencer ao município informado."
+                      },
+                      {
+                        "error": "400-RN-225",
+                        "message": "São permitidos endereços de cobrança somente no Brasil."
+                      },
+                    ]
+                  }
+
+  /carts/{token}:
+    parameters:
+      - $ref:  "#/components/parameters/CartToken"
+    get:
+      tags:
+        - "cart"
+      summary: "Show summarized cart."
+      description: "This endpoint shows you the current calculated state of cart."
+      operationId: "cartSummarize"
+      responses:
+        200:
+          description: "Current state of the cart, with calculated prices and related items."
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/Cart"
+        400:
+          description: "Invalid input (E.g. token has not been found)"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+    delete:
+      tags:
+        - "cart"
+      summary: "Drop your cart."
+      description: "This endpoint will remove the cart and all of the related cart items."
+      operationId: "cartDrop"
+      responses:
+        204:
+          description: "Cart has been dropped."
+        400:
+          description: "Invalid input (E.g. token has not been found)"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+
+  /carts/{token}/items:
+    parameters:
+      - $ref:  "#/components/parameters/CartToken"
+    post:
+      tags:
+        - "cart"
+      summary: "Add an item to your cart."
+      description: "This endpoint will allow you to add a new item to your cart."
+      operationId: "cartAddItem"
+      requestBody:
+        description: "Description of an item. The smallest required amount of data is a product code and quantity for a simple product. Configurable products will require an additional `variant_code` or `options` field, but never both."
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/PutItemToCartRequest"
+      responses:
+        201:
+          description: "Item has been added to the cart"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/Cart"
+        400:
+          description: "Invalid input, validation failed."
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+
+  /carts/{token}/multiple-items:
+    parameters:
+      - $ref:  "#/components/parameters/CartToken"
+    post:
+      tags:
+        - "cart"
+      summary: "Add multiple items to your cart."
+      description: "This endpoint will allow you to add a new item to your cart."
+      operationId: "cartPutItems"
+      requestBody:
+        description: "Description of items. The same rules applied to each of the array values as to the previous point."
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/PutItemsToCartRequest"
+      responses:
+        201:
+          description: "Item has been added to the cart"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/Cart"
+        400:
+          description: "Invalid input, validation failed."
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+
+  /carts/{token}/items/{identifier}:
+    parameters:
+      - $ref:  "#/components/parameters/CartToken"
+      - name: "identifier"
+        in: "path"
+        description: "Identifier of a specific item. Can be found in the cart summary."
+        required: true
+        schema:
+          type: "string"
+    put:
+      tags:
+        - "cart"
+      summary: "Change quantity of a cart item."
+      operationId: "cartUpdateItem"
+      requestBody:
+        description: 'Dados a serem atualizados doo Pet'
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: "#/components/schemas/ChangeItemQuantityRequest"
+      responses:
+        204:
+          description: "Quantity has been changed."
+        400:
+          description: "Invalid input, validation failed."
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+    delete:
+      tags:
+        - "cart"
+      summary: "Remove cart item."
+      operationId: "cartDeleteItem"
+      description: "This endpoint will remove one item from your cart"
+      responses:
+        204:
+          description: "Cart item has been removed."
+        400:
+          description: "Invalid input (E.g. token has not been found)"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+
+  /carts/{token}/estimated-shipping-cost:
+    parameters:
+      - $ref: "#/components/parameters/CartToken"
+    get:
+      tags:
+        - "cart"
+      summary: "Estimates the shipping cost of the cart"
+      operationId: "estimateShippingCost"
+      parameters:
+        - name: "countryCode"
+          in: "query"
+          description: "Shipping Country"
+          required: true
+          schema:
+            type: "string"
+        - name: "provinceCode"
+          in: "query"
+          description: "Province to ship to"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        200:
+          description: "Price was calculated"
+          content:
+            'application/json': 
+              schema:
+                $ref: "#/components/schemas/EstimatedShippingCost"
+        400:
+          description: "Invalid input (E.g. token has not been found)"
+          content:
+            'application/json': 
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+
+  /carts/{token}/coupon:
+    parameters:
+      - $ref: "#/components/parameters/CartToken"
+    put:
+      tags:
+        - "cart"
+      summary: "Add a promotion coupon code to the cart."
+      description: "This endpoint will allow you to add a promotion coupon code to the cart and receive the discount."
+      operationId: "cartAddCoupon"
+      requestBody:
+        description: 'XXXXXXXXX'
+        required: true
+        content:
+          'application/json':          
+            schema:
+              $ref: "#/components/schemas/AddCouponRequest"
+      responses:
+        204:
+          description: "Coupon has been assigned to the cart."
+        400:
+          description: "Invalid input, validation failed."
+          content:
+            'application/json': 
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+    delete:
+      tags:
+        - "cart"
+      summary: "Remove a promotion coupon code from the cart."
+      description: "This endpoint will allow you to remove a promotion coupon code from the cart."
+      operationId: "cartRemoveCoupon"
+      responses:
+        204:
+          description: "Coupon has been removed from the cart."
+        400:
+          description: "Invalid input, validation failed."
+          content:
+            'application/json': 
+              schema:
+                $ref: "#/components/schemas/GeneralError"
+
+components:
+  parameters:
+    CartToken:
+      name: "token"
+      in: 'path'
+      description: "Cart identifier."
+      required: true
+      schema:
+        type: string
+  schemas:
+    AddReviewRequest:
+        type: "object"
+        description: "Body of request with a channel code."
+        required:
+        - "title"
+        - "rating"
+        - "comment"
+        - "email"
+        properties:
+          title:
+            type: "string"
+            example: "Awesome product"
+          rating:
+            type: "integer"
+            example: 5
+          comment:
+            type: "string"
+            example: "If I were a mug, I would like to be like this one!"
+          email:
+            type: "string"
+            description: "Email of an author."
+            example: "customer@example.com"
+    PutItemToCartRequest:
+        type: "object"
+        description: "Body of request used to put item to the cart."
+        required:
+        - "productCode"
+        properties:
+          productCode:
+            type: "string"
+            example: "LOGAN_HAT_CODE"
+          quantity:
+            type: "integer"
+            minimum: 1
+            example: 3
+            default: 1
+          variantCode:
+            type: "string"
+            example: "SMALL_LOGAN_T_SHIRT_CODE"
+          options:
+            type: "object"
+            description: "Keys reference to the code of an option and values to the code of option value."
+            additionalProperties:
+              type: "string"
+              example: "HAT_SIZE_S"
+    PutItemsToCartRequest:
+        type: "object"
+        description: "Body of request used to put item to the cart."
+        properties:
+          items:
+            type: "array"
+            items:
+              type: "object"
+            $ref: "#/components/schemas/PutItemToCartRequest"
+    ChangeItemQuantityRequest:
+        type: "object"
+        description: "Body of request used to change quantity of an item."
+        required:
+        - "quantity"
+        properties:
+          quantity:
+            type: "integer"
+            example: 2
+    AddCouponRequest:
+        type: "object"
+        description: "Body of request used to add promotion coupon code to cart."
+        required:
+        - "coupon"
+        properties:
+          coupon:
+            type: "string"
+            example: "BANANAS"
+    CheckoutAddressRequest:
+        type: "object"
+        description: "Body of request used for cart addressing."
+        required:
+        - "shippingAddress"
+        properties:
+          shippingAddress:
+            $ref: "#/components/schemas/Address"
+          billingAddress:
+            $ref: "#/components/schemas/Address"
+    CheckoutChooseShippingMethodRequest:
+        type: "object"
+        description: "Body of request used to choose shipping method."
+        required:
+        - "method"
+        properties:
+          method:
+            type: "string"
+            description: "Code of chosen shipping method."
+            example: "DHL"
+    CheckoutChoosePaymentMethodRequest:
+        type: "object"
+        description: "Body of request used to choose payment method."
+        required:
+        - "method"
+        properties:
+          method:
+            type: "string"
+            description: "Code of chosen payment method."
+            example: "PBC"
+    CheckoutCompleteRequest:
+        type: "object"
+        description: "Body of request used to complete checkout."
+        required:
+        - "email"
+        properties:
+          email:
+            type: "string"
+            description: "Email of a customer."
+            example: "customer@example.com"
+          notes:
+            type: "string"
+            description: "Additional notes."
+            example: "I'm only available between 3 and 8 PM."
+
+    AvailableShippingMethods:
+        type: "object"
+        description: "Available shipping methods for each shipment."
+        properties:
+          shipments:
+            type: "array"
+            items:
+              type: "object"
+              properties:
+                methods:
+                  type: "object"
+                  additionalProperties:
+                    $ref: "#/components/schemas/ShippingMethod"
+    Shipment:
+        type: "object"
+        properties:
+          state:
+            description: "Current state of a shipment."
+            type: "string"
+            default: "cart"
+            externalDocs:
+              description: "Find out more about shipment states in the Sylius documentation."
+              url: "http://docs.sylius.com/en/latest/book/orders/shipments.html#the-shipment-state-machine"
+            enum:
+            - "cart"
+            - "ready"
+            - "cancelled"
+            - "shipped"
+          method:
+            $ref: "#/components/schemas/ShippingMethod"
+    AvailablePaymentMethods:
+        type: "object"
+        description: "Available payment methods for each payment."
+        properties:
+          payments:
+            type: "array"
+            items:
+              type: "object"
+            properties:
+              methods:
+                type: "object"
+                additionalProperties:
+                    type: "object"
+                    $ref: "#/components/schemas/PaymentMethod"
+    Payment:
+      type: "object"
+      properties:
+        state:
+          description: "Current state of a payment."
+          type: "string"
+          default: "cart"
+          externalDocs:
+            description: "Find out more about payment states in the Sylius documentation."
+            url: "http://docs.sylius.com/en/latest/book/orders/payments.html#payment-state-machine"
+          enum:
+            - "cart"
+            - "new"
+            - "processing"
+            - "completed"
+            - "failed"
+            - "cancelled"
+            - "refunded"
+        method:
+            $ref: "#/components/schemas/PaymentMethod"
+    Cart:
+      type: "object"
+      description: "Cart with information about items, current state, totals and more."
+      properties:
+        tokenValue:
+            type: "string"
+            example: "SDAOSLEFNWU35H3QLI5325"
+        channel:
+          type: "string"
+          example: "WEB_GB"
+          externalDocs:
+            description: "Find out more about channels in the Sylius documentation."
+            url: "http://docs.sylius.com/en/latest/book/configuration/channels.html"
+        currency:
+          description: "Code of the cart currency according to ISO 4217. This value is inherited from channel"
+          type: "string"
+          example: "GBP"
+        locale:
+          description: "Code of the cart locale. This value is inherited from channel"
+          type: "string"
+          example: "en_GB"
+        checkoutState:
+          description: "Current state of a checkout."
+          type: "string"
+          default: "cart"
+          externalDocs:
+            description: "Find out more about checkout states in the Sylius documentation."
+            url: "http://docs.sylius.com/en/latest/book/orders/checkout.html#checkout-state-machine"
+          enum:
+            - "cart"
+            - "addressed"
+            - "shipping_selected"
+            - "payment_selected"
+            - "completed"
+        items:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Item"
+        totals:
+          $ref: "#/components/schemas/TotalsView"
+        shippingAddress:
+          $ref: "#/components/schemas/Address"
+        billingAddress:
+          $ref: "#/components/schemas/Address"
+        payments:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Payment"
+        shipments:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Shipment"
+        cartDiscounts:
+          type: "array"
+          items:
+            type: "object"
+            additionalProperties:
+              $ref: "#/components/schemas/Discount"
+        couponCode:
+            description: "Code of the coupon that is associated with this cart"
+            type: "string"
+            example: "LD11FA"
+    Item:
+      type: "object"
+      description: "Item with calculated prices, quantity and related product."
+      properties:
+        id:
+          type: "integer"
+          example: 1
+        quantity:
+          type: "integer"
+          example: 2
+        total:
+          type: "integer"
+          example: 1000
+        product:
+          $ref: "#/components/schemas/Product"
+    Product:
+        type: "object"
+        description: "Product with its basic information, variants, attributes, association and images."
+        properties:
+          code:
+            type: "string"
+            example: "LOGAN_MUG_CODE"
+          name:
+            type: "string"
+            example: "Logan Mug"
+          slug:
+            type: "string"
+            example: "logan-mug"
+          averageRating:
+            type: "string"
+            example: "4.5"
+          taxons:
+            $ref: "#/components/schemas/ProductTaxon"
+          variants:
+            description: "Keys reference to code of a variant."
+            type: "object"
+            additionalProperties:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/Variant"
+          attributes:
+            type: "array"
+            items:
+              $ref: "#/components/schemas/Attribute"
+          associations:
+            description: "Keys reference to code of an association."
+            type: "object"
+            additionalProperties:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/Product"
+          images:
+            type: "array"
+            items:
+              $ref: "#/components/schemas/Image"
+    Image:
+        type: "object"
+        properties:
+          code:
+            type: "string"
+            example: "thumbnail"
+          path:
+            type: "string"
+            example: "/uo/mug.jpg"
+    Variant:
+      type: "object"
+      description: "If the product is simple it will have only one variant with the same code and name. Otherwise, the product can have a list of variants with different fields."
+      properties:
+        code:
+            type: "string"
+            example: "LOGAN_MUG_CODE"
+        name:
+            type: "string"
+            example: "Logan Mug"
+        axis:
+          type: "array"
+          description: "List of codes of associated product options."
+          items:
+            type: "string"
+            example: "HAT_SIZE_S"
+        nameAxis:
+          description: "Map of keys from previous field to translated values of given variant."
+          type: "object"
+          additionalProperties:
+            type: "string"
+        price:
+            $ref: "#/components/schemas/Price"
+        originalPrice:
+            $ref: "#/components/schemas/Price"
+        images:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Image"
+    Attribute:
+      type: "object"
+      properties:
+        code:
+            type: "string"
+            example: "MUG_MATERIAL_CODE"
+        name:
+            type: "string"
+            example: "Mug material"
+        value:
+            type: "string"
+            example: "Wood"
+    Taxon:
+      type: "object"
+      properties:
+        code:
+            type: "string"
+            example: "CATEGORIES_CODE"
+        name:
+            type: "string"
+            example: "Categories"
+        slug:
+            type: "string"
+            example: "categories"
+        description:
+            type: "string"
+            example: "General category for all products."
+        children:
+            type: "array"
+            description: "Based on this tree one can build a breadcrumb on a frontend. Otherwise (e.g. presenting a tree of all taxons) children will contain all children of given taxon."
+            items:
+              $ref: "#/components/schemas/Taxon"
+        images:
+            type: "array"
+            items:
+              $ref: "#/components/schemas/Image"
+    TaxonDetails:
+      type: "object"
+      properties:
+        self:
+          $ref: "#/components/schemas/Taxon"
+        parentTree:
+            $ref: "#/components/schemas/Taxon"
+    ProductTaxon:
+      type: "object"
+      properties:
+        main:
+            type: "string"
+            example: "MAIN_TAXON_CODE"
+        others:
+          type: "array"
+          items:
+            type: "string"
+            example: "OTHER_TAXON_CODE"
+    Discount:
+      type: "object"
+      properties:
+        name:
+            description: "Name of promotion."
+            type: "string"
+            example: "Summer sale"
+        amount:
+            $ref: "#/components/schemas/Price"
+    Page:
+        type: "object"
+        description: "Generic page object."
+        properties:
+          page:
+            description: "Current page number."
+            type: "integer"
+            example: 1
+          limit:
+            description: "Number of items per page."
+            type: "integer"
+            example: 10
+          pages:
+            description: "Number of available pages for given limit."
+            type: "integer"
+            example: 3
+          total:
+            description: "Amount of all paginated resources."
+            type: "integer"
+            example: 25
+          _links:
+            type: "object"
+            properties:
+              self:
+                description: "Link to the current page."
+                type: "string"
+                example: "/shop-api/some-path?page=1&limit=10"
+              first:
+                description: "Link to the fist page."
+                type: "string"
+                example: "/shop-api/some-path?page=1&limit=10"
+              last:
+                description: "Link to the last page."
+                type: "string"
+                example: "/shop-api/some-path?page=1&limit=10"
+              next:
+                description: "Link to the next page."
+                type: "string"
+                example: "/shop-api/some-path?page=1&limit=10"
+    ProductsPage:
+        allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: "object"
+          properties:
+            items:
+                type: "array"
+                items:
+                $ref: "#/components/schemas/Product"
+    ProductDetails:
+        allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: "object"
+          properties:
+            breadcrumb:
+                type: "string"
+                example: "categories/mugs/logan-mug"
+    ProductReviewsPage:
+        allOf:
+        - $ref: "#/components/schemas/Page"
+        - type: "object"
+          properties:
+            title:
+                type: "string"
+                example: "Nice mug"
+            rating:
+                type: "integer"
+                example: 5
+            createdAt:
+                type: "string"
+                example: "2016-01-02 21:00:10"
+            comment:
+                type: "string"
+                example: "It is a really nice mug."
+            author:
+                type: "string"
+                example: "example@shop.com"
+    Price:
+        type: "object"
+        properties:
+          current:
+            description: "Calculated price for given channel. Price is stored as an integer, so by default it should be divided by 100."
+            type: "integer"
+            example: 1000
+          currency:
+            type: "string"
+            example: "PLN"
+    EstimatedShippingCost:
+        type: "object"
+        properties:
+          price:
+            $ref: "#/components/schemas/Price"
+    Address:
+        type: "object"
+        properties:
+          firstName:
+            type: "string"
+            example: "Sherlock"
+          lastName:
+            type: "string"
+            example: "Holmes"
+          countryCode:
+            type: "string"
+            example: "GB"
+          street:
+            type: "string"
+            example: "Baker Street 221b"
+          city:
+            type: "string"
+            example: "London"
+          postcode:
+            type: "string"
+            example: "NW1"
+          provinceName:
+            type: "string"
+            example: "Greater London"
+          company:
+            type: "string"
+            example: "Holmes Investigation Service"
+          phoneNumber:
+            type: "string"
+            example: "+490000000000"
+    PaymentMethod:
+        type: "object"
+        properties:
+          code:
+            type: "string"
+            example: "PBC"
+          name:
+            type: "string"
+            example: "Pay by check"
+          description:
+            type: "string"
+            example: "Some strange description."
+          instructions:
+            type: "string"
+            example: "Some instructions."
+    ShippingMethod:
+        type: "object"
+        properties:
+          code:
+            type: "string"
+            example: "DHL"
+          name:
+            type: "string"
+            example: "DHL Delivery"
+          description:
+            type: "string"
+            example: "DHL Delivery will deliver your parcel even next day!"
+          price:
+            $ref: "#/components/schemas/Price"
+    RequestPasswordResetting:
+        type: "object"
+        properties:
+          email:
+            type: "string"
+            example: "test@example.com"
+    PasswordResetRequest:
+        type: "object"
+        properties:
+          password:
+            $ref: "#/components/schemas/PasswordReset"
+    PasswordReset:
+        type: object
+        properties:
+          first:
+            type: "string"
+            example: "a-new-password"
+          second:
+            type: "string"
+            example: "a-new-password"
+    RegisterRequest:
+      type: "object"
+      properties:
+        email:
+            type: "string"
+            example: "test@example.com"
+        plainPassword:
+            type: "string"
+            example: "test12334verysecure"
+        firstName:
+            type: "string"
+            example: "Sherlock"
+        lastName:
+            type: "string"
+            example: "Holmes"
+        channel:
+            type: "string"
+            example: "WEB_GB"
+    LoginRequest:
+      type: "object"
+      required:
+        - email
+        - password
+      properties:
+        email:
+            type: "string"
+            example: "test@example.com"
+        password:
+            type: "string"
+            example: "test12334verysecure"
+        token:
+            type: "string"
+            description: "The token of the current cart which should be assign to the customer"
+            example: "SDAOSLEFNWU35H3QLI5325"
+    UpdateUserRequest:
+      type: "object"
+      properties:
+        firstName:
+            type: "string"
+            example: "Sherlock"
+        lastName:
+            type: "string"
+            example: "Holmes"
+        email:
+            type: "string"
+            example: "sherlock@holmes.com"
+        birthday:
+            type: "string"
+            example: "2017-08-12"
+        gender:
+            type: "string"
+            example: "f"
+        phoneNumber:
+            type: "string"
+            example: "+490000000000"
+        subscribedToNewsletter:
+            type: "integer"
+            example: 0
+    ChangePasswordRequest:
+      type: "object"
+      properties:
+        currentPassword:
+            type: "string"
+            example: "current-user-password"
+        newPassword:
+            $ref: "#/components/schemas/PasswordReset"
+    LoggedInCustomerDetails:
+      type: "object"
+      properties:
+        firstName:
+            type: "string"
+            example: "Sherlock"
+        lastName:
+            type: "string"
+            example: "Holmes"
+        email:
+            type: "string"
+            example: "sherlock@holmes.com"
+        birthday:
+            type: "string"
+            example: "2017-08-12"
+        gender:
+            type: "string"
+            example: "m"
+        phoneNumber:
+            type: "string"
+            example: "+490000000000"
+        subscribedToNewsletter:
+            type: "boolean"
+            example: false
+
+    LoggedInCustomerAddressBook:
+      type: "array"
+      items:
+        allOf:
+            - $ref: "#/components/schemas/LoggedInCustomerAddressBookAddress"
+            - type: "object"
+        properties:
+          default:
+            type: "boolean"
+            example: false
+    LoggedInCustomerAddressBookAddress:
+      type: "object"
+      properties:
+        id:
+            type: "integer"
+            example: 1
+        firstName:
+            type: "string"
+            example: "Sherlock"
+        lastName:
+            type: "string"
+            example: "Holmes"
+        countryCode:
+            type: "string"
+            example: "GB"
+        street:
+            type: "string"
+            example: "Baker Street 221b"
+        city:
+            type: "string"
+            example: "London"
+        postcode:
+            type: "string"
+            example: "NW1"
+        provinceName:
+            type: "string"
+            example: "Greater London"
+        provinceCode:
+            type: "string"
+            example: "GB_gl"
+        company:
+            type: "string"
+            example: "Holmes Investigation Service"
+        phoneNumber:
+            type: "string"
+            example: "+490000000000"
+    TotalsView:
+      type: "object"
+      properties:
+        total:
+            description: "Total cost of the cart. The sum of all properties below."
+            type: "integer"
+            example: 0
+        items:
+            description: "Total cost of the cart items."
+            type: "integer"
+            example: 0
+        taxes:
+            description: "Total amount of cart taxes."
+            type: "integer"
+            example: 0
+        shipping:
+            description: "Total cost of the cart shipment."
+            type: "integer"
+            example: 0
+        promotion:
+            description: "Total amount of cart promotions."
+            type: "integer"
+            example: 0
+    LoginSuccess:
+      type: "object"
+      description: "User was logged in."
+      properties:
+        token:
+            type: "string"
+            example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
+    PlacedOrder:
+      type: "object"
+      description: "Placed order with information about items, current state, totals and more."
+      properties:
+        tokenValue:
+          type: "string"
+          example: "SDAOSLEFNWU35H3QLI5325"
+        channel:
+          type: "string"
+          example: "WEB_GB"
+          externalDocs:
+            description: "Find out more about channels in the Sylius documentation."
+            url: "http://docs.sylius.com/en/latest/book/configuration/channels.html"
+        currency:
+            description: "Code of the cart currency according to ISO 4217. This value is inherited from channel"
+            type: "string"
+            example: "GBP"
+        locale:
+            description: "Code of the order locale. This value is inherited from channel"
+            type: "string"
+            example: "en_GB"
+        checkoutState:
+          description: "Current state of a checkout."
+          type: "string"
+          default: "cart"
+          externalDocs:
+            description: "Find out more about checkout states in the Sylius documentation."
+            url: "http://docs.sylius.com/en/latest/book/orders/checkout.html#checkout-state-machine"
+          enum:
+            - "cart"
+            - "addressed"
+            - "shipping_selected"
+            - "payment_selected"
+            - "completed"
+        checkoutCompletedAt:
+            description: "Date the order was completed in ISO 8601 format."
+            type: "string"
+            format: "date-time"
+        items:
+            type: "array"
+            items:
+            $ref: "#/components/schemas/Item"
+        totals:
+            $ref: "#/components/schemas/TotalsView"
+        shippingAddress:
+            $ref: "#/components/schemas/Address"
+        billingAddress:
+            $ref: "#/components/schemas/Address"
+        payments:
+            type: "array"
+            items:
+            $ref: "#/components/schemas/Payment"
+        shipments:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Shipment"
+        cartDiscounts:
+          type: "array"
+          items:
+            type: "object"
+            additionalProperties:
+              $ref: "#/components/schemas/Discount"
+    GeneralError:
+        type: "object"
+        properties:
+          errors:
+            description: "Keys reference to the fields where the error occurred."
+            type: array            
+            items:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: '400-123'
+                message:
+                  type: string
+                  example: "Campo 'quantidade' é obrigatório e deve ser igual ou maior a 1."
+  responses:
+    NotFound:
+      description: Entity not found.
+    IllegalInput:
+      description: Illegal input for operation.
+    GeneralError:
+      description: General Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+    
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: "Authorization"
+      in: header
+    petstore_auth:
+      type: oauth2
+      flows: 
+        implicit:
+          authorizationUrl: http://example.org/api/oauth/dialog
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
