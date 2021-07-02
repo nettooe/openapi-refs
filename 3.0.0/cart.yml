@@ -77,7 +77,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Cart'
       responses:
-        '201':
+        201:
           description: "Esta resposta indica que o carrinho (cart) foi gravado com sucesso. Observe que, no retorno existe o campo 'tokenValue' "
           content:
             "application/json":
@@ -146,6 +146,11 @@ paths:
                       },
                     ]
                   }
+        401:
+          description: Acesso não autorizado. Ou a aplicação não tem as permissões de acesso, ou os parâmetros de segurança informados estão inválidos.
+
+        500:
+          description: Erro interno no servidor.
 
   /carts/{token}:
     parameters:
@@ -153,22 +158,23 @@ paths:
     get:
       tags:
         - "cart"
-      summary: "Show summarized cart."
-      description: "This endpoint shows you the current calculated state of cart."
+      summary: "Mostra o resumo de um carrinho de compras."
+      description: "Este endpoint retorna o resumo de um carrinho de compras e já calculado."
       operationId: "cartSummarize"
       responses:
         200:
-          description: "Current state of the cart, with calculated prices and related items."
+          description: "Estado atual do carrinho de compras, com preços calculados dos itens adicionados."
           content:
             'application/json':
               schema:
                 $ref: "#/components/schemas/Cart"
-        400:
-          description: "Invalid input (E.g. token has not been found)"
-          content:
-            'application/json':
-              schema:
-                $ref: "#/components/schemas/GeneralError"
+        401:
+          description: "Acesso não autorizado. Ou a aplicação não tem as permissões de acesso, ou os parâmetros de segurança informados estão inválidos."
+        404:
+          description: "Entrada inválida. Token informado não foi encontrado."
+        500:
+          description: "Erro interno no servidor."
+
     delete:
       tags:
         - "cart"
@@ -372,7 +378,7 @@ components:
     CartToken:
       name: "token"
       in: 'path'
-      description: "Cart identifier."
+      description: "Token de identificação de um carrinho."
       required: true
       schema:
         type: string
@@ -562,9 +568,9 @@ components:
       type: "object"
       description: "Cart with information about items, current state, totals and more."
       properties:
-        tokenValue:
-            type: "string"
-            example: "SDAOSLEFNWU35H3QLI5325"
+#        tokenValue:
+#            type: "string"
+#            example: "SDAOSLEFNWU35H3QLI5325"
         channel:
           type: "string"
           example: "WEB_GB"
