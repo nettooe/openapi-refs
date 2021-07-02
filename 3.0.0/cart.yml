@@ -147,10 +147,11 @@ paths:
                     ]
                   }
         401:
-          description: Acesso não autorizado. Ou a aplicação não tem as permissões de acesso, ou os parâmetros de segurança informados estão inválidos.
-
+          description: "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+        403:
+          description: "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
         500:
-          description: Erro interno no servidor.
+          description: "Erro interno no servidor."
 
   /carts/{token}:
     parameters:
@@ -180,12 +181,12 @@ paths:
     delete:
       tags:
         - "cart"
-      summary: "Drop your cart."
+      summary: "Eliminar um carrinho."
       description: "This endpoint will remove the cart and all of the related cart items."
       operationId: "cartDrop"
       responses:
         204:
-          description: "Cart has been dropped."
+          description: "Carrinho foi eliminado."
         401:
           description: "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
         403:
@@ -218,15 +219,15 @@ paths:
 
   /carts/{token}/items:
     parameters:
-      - $ref:  "#/components/parameters/CartToken"
+      - $ref:  "#/components/parameters/CartToken"      
     post:
       tags:
         - "cart"
-      summary: "Add an item to your cart."
-      description: "This endpoint will allow you to add a new item to your cart."
+      summary: "Adicionar iten no carrinho."
+      description: "Este endpoint permite adicionar um novo item no carrinho."
       operationId: "cartAddItem"
       requestBody:
-        description: "Description of an item. The smallest required amount of data is a product code and quantity for a simple product. Configurable products will require an additional `variant_code` or `options` field, but never both."
+        description: "Descrição de um item. The smallest required amount of data is a product code and quantity for a simple product. Configurable products will require an additional `variant_code` or `options` field, but never both."
         required: true
         content:
           'application/json':
