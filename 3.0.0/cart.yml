@@ -87,7 +87,7 @@ paths:
                   tokenValue:
                     type: string
                     description: token do carrinho de compras (cart) criado.
-                example: {"tokenValue": "SDAOSLEFNWU35H3QLI5325"}
+                example: {"tokenValue": "1f33db3a-5920-4f34-8d88-6805aa5a8948"}
           links:
             GetCartByToken: #<---- nome do link é arbitrário
               operationId: getCart
@@ -101,7 +101,7 @@ paths:
               description: "URI do objeto criado"
               style: simple
               schema:
-                example: '/cart/SDAOSLEFNWU35H3QLI5325'
+                example: '/cart/1f33db3a-5920-4f34-8d88-6805aa5a8948'
 
         400:
           description: "Entrada inválida"
@@ -137,11 +137,11 @@ paths:
                         "message": "Campo 'tokenValue' é obrigatório."
                       },
                       {
-                        "error": "400-RN-224",
+                        "error": "400-RNG-224",
                         "message": "No endereço de entrega, o CEP deve pertencer ao município informado."
                       },
                       {
-                        "error": "400-RN-225",
+                        "error": "400-RNG-225",
                         "message": "São permitidos endereços de cobrança somente no Brasil."
                       },
                     ]
@@ -169,9 +169,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Cart"
         401:
-          description: "Acesso não autorizado. Ou a aplicação não tem as permissões de acesso, ou os parâmetros de segurança informados estão inválidos."
+          description: "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+        403:
+          description: "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
         404:
-          description: "Entrada inválida. Token informado não foi encontrado."
+          description: "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
         500:
           description: "Erro interno no servidor."
 
@@ -184,12 +186,35 @@ paths:
       responses:
         204:
           description: "Cart has been dropped."
+        401:
+          description: "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+        403:
+          description: "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
         400:
-          description: "Invalid input (E.g. token has not been found)"
+          description: "Entrada inválida"
           content:
             'application/json':
               schema:
                 $ref: "#/components/schemas/GeneralError"
+              examples:
+                cart-400-05:
+                  summary: exemplo com erros possíveis.
+                  value: {
+                    "errors": [                      
+                      {
+                        "error": "400-RNG-229",
+                        "message": "Não é possível excluir um carrinho de compra cujo pagamento já foi finalizado."
+                      },
+                      {
+                        "error": "400-RNG-230",
+                        "message": "Este carrinho de compras já foi eliminado e seu estado não pode ser modificado."
+                      },
+                    ]
+                  }
+        404:
+          description: "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+        500:
+          description: "Erro interno no servidor."
 
   /carts/{token}/items:
     parameters:
@@ -570,7 +595,7 @@ components:
       properties:
 #        tokenValue:
 #            type: "string"
-#            example: "SDAOSLEFNWU35H3QLI5325"
+#            example: "1f33db3a-5920-4f34-8d88-6805aa5a8948"
         channel:
           type: "string"
           example: "WEB_GB"
@@ -985,7 +1010,7 @@ components:
         token:
             type: "string"
             description: "The token of the current cart which should be assign to the customer"
-            example: "SDAOSLEFNWU35H3QLI5325"
+            example: "1f33db3a-5920-4f34-8d88-6805aa5a8948"
     UpdateUserRequest:
       type: "object"
       properties:
@@ -1125,7 +1150,7 @@ components:
       properties:
         tokenValue:
           type: "string"
-          example: "SDAOSLEFNWU35H3QLI5325"
+          example: "1f33db3a-5920-4f34-8d88-6805aa5a8948"
         channel:
           type: "string"
           example: "WEB_GB"
