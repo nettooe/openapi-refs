@@ -87,7 +87,7 @@ paths:
                   tokenValue:
                     type: string
                     description: token do carrinho de compras (cart) criado.
-                example: {"tokenValue": "1f33db3a-5920-4f34-8d88-6805aa5a8948"}
+              example: {"tokenValue": "1f33db3a-5920-4f34-8d88-6805aa5a8948"}
           links:
             GetCartByToken: #<---- nome do link é arbitrário
               operationId: getCart
@@ -219,7 +219,7 @@ paths:
 
   /carts/{token}/items:
     parameters:
-      - $ref:  "#/components/parameters/CartToken"      
+      - $ref:  "#/components/parameters/CartToken"
     post:
       tags:
         - "cart"
@@ -1234,16 +1234,16 @@ components:
           schema:
             $ref: '#/components/schemas/GeneralError'
     
-  securitySchemes:
-    api_key:
-      type: apiKey
-      name: "Authorization"
-      in: header
-    petstore_auth:
-      type: oauth2
-      flows: 
-        implicit:
-          authorizationUrl: http://example.org/api/oauth/dialog
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
+#  securitySchemes:
+#    api_key:
+#      type: apiKey
+#      name: "Authorization"
+#      in: header
+#    petstore_auth:
+#      type: oauth2
+#      flows: 
+#        implicit:
+#          authorizationUrl: http://example.org/api/oauth/dialog
+#          scopes:
+#            write:pets: modify pets in your account
+#            read:pets: read your pets
