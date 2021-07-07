@@ -102,7 +102,7 @@ paths:
               examples:
                 201-default:
                   summary: Exemplo de retorno com o token gerado
-                  value: {"tokenValue": "1f33db3a-5920-4f34-8d88-6805aa5a8948"}
+                  value: {"tokenValue": "1f33db3a-5920-4f34-8d88-6805aa5a8948", "trace": "{{request.headers[trace]}}"}
           links:
             GetCartByToken: #<---- nome do link é arbitrário
               operationId: getCart
