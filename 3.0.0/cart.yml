@@ -69,6 +69,17 @@ paths:
           Se o array de "items" for diferente de vazio, então são aplicadas validações em cada item. Neste caso, considere as mesma validações realizadas no endpoint "POST /carts/{token}/items"
         '
       operationId: "cartPickUp"
+      parameters:
+        - name: "request_id"
+          in: "header"
+          description: "Identificador da requisição, utilizado para realizaar tracing das requisições."
+          required: true
+          schema:
+            type: "string"
+          examples:
+            req_id-01:
+              summary: exemplo baseado em UUID versão 4
+              value: "1f33db3a-5920-4f34-8d88-6805aa5a8948"
       requestBody:
         description: 'Abaixo está descrito um exemplo completo, mas a entidade (nova) pode começar somente com as propriedades obrigatórias, ou seja, um carrinho pode ser inicializado sem a propriedade "items" e até mesmo sem a definição da forma de pagamento.'
         required: true
