@@ -165,10 +165,40 @@
                          },
                          "examples": {
                             "cart-400-01": {
-                               "summary": "exemplo 400 com diversos erros do tipo validação."
+                               "summary": "exemplo 400 com diversos erros do tipo validação.",
+                               "value": {"errors": [
+                                {
+                                  "error": "400-VLD-123",
+                                  "message": "Campo 'tokenValue' é obrigatório."
+                                },
+                                {
+                                  "error": "400-VLD-124",
+                                  "message": "Campo 'channel' é obrigatório."
+                                },
+                                {
+                                  "error": "400-VLD-125",
+                                  "message": "Campo 'locale' é obrigatório."
+                                }
+                              ]}
                             },
                             "cart-400-02": {
-                               "summary": "exemplo 400 com erros de validação e de Regras de Negócio"
+                               "summary": "exemplo 400 com erros de validação e de Regras de Negócio",
+                               "value": {
+                                "errors": [
+                                  {
+                                    "error": "400-VLD-123",
+                                    "message": "Campo 'tokenValue' é obrigatório."
+                                  },
+                                  {
+                                    "error": "400-RNG-224",
+                                    "message": "No endereço de entrega, o CEP deve pertencer ao município informado."
+                                  },
+                                  {
+                                    "error": "400-RNG-225",
+                                    "message": "São permitidos endereços de cobrança somente no Brasil."
+                                  }
+                                ]
+                              }
                             }
                          }
                       }
