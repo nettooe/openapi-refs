@@ -109,8 +109,7 @@ paths:
               parameters:
                 token: '$/response.body/{token}'
               description:
-                O `tokenValue` retornado na resposta pode ser usado como
-                parâmetro `token` em `GET /cart/{token}`
+                O `tokenValue` retornado na resposta pode ser usado como parâmetro `token` em `GET /cart/{token}`
           headers:
             Location:
               description: "URI do objeto criado"
