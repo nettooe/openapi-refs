@@ -1,0 +1,33 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+       "title": "Cart API Postman import",
+       "version": "1.0.0",
+       "description": "Cart API documentation"
+    },
+    "tags": [
+       {
+          "name": "cart",
+          "description": "Todas as ações relacionadas a carrinho de compras.",
+          "externalDocs": {
+             "description": "Saiba mais",
+             "url": "https://minhaempresa.net/wiki/api/cart"
+          }
+       }
+    ],
+    "paths": {
+       "/carts": {
+          "post": {
+             "tags": [
+                "cart"
+             ],
+             "summary": "Gravar um novo carrinho de compras.",
+             "responses": {
+                "201": {
+                   "description": "Esta resposta indica que o carrinho (cart) foi gravado com sucesso."
+                }
+             }
+          }
+       }
+    }
+ }
