@@ -73,9 +73,53 @@
              "description": "Saiba mais",
              "url": "https://minhaempresa.net/wiki/api/cart"
           }
+       },
+       {
+          "name": "healthcheck",
+          "description": "Todas as ações relacionadas verificação de status do serviço.",
+          "externalDocs": {
+             "description": "Saiba mais",
+             "url": "https://minhaempresa.net/wiki/api/status"
+          }
        }
     ],
     "paths": {
+       "/healthcheck": {
+          "get": {
+             "tags": [
+                "healthcheck"
+             ],
+             "summary": "Verificar a disponibilidade da API.",
+             "description": "Este endpoint permite verificar o status de disponibilidade do serviço",
+             "operationId": "apiHeathCheck",
+             "responses": {
+                "200": {
+                   "description": "Esta resposta indica que o serviço está funcionando.",
+                   "content": {
+                      "application/json": {
+                         "schema": {
+                            "type": "object",
+                            "properties": {
+                               "status": {
+                                  "type": "string",
+                                  "description": "Tipo do Status"
+                               }
+                            }
+                         },
+                         "examples": {
+                            "200-ok": {
+                               "summary": "Serviço em funcionamento",
+                               "value": {
+                                  "status": "up"
+                               }
+                            }
+                         }
+                      }
+                   }
+                }
+             }
+          }
+       },
        "/carts": {
           "post": {
              "tags": [
@@ -166,39 +210,41 @@
                          "examples": {
                             "cart-400-01": {
                                "summary": "exemplo 400 com diversos erros do tipo validação.",
-                               "value": {"errors": [
-                                {
-                                  "error": "400-VLD-123",
-                                  "message": "Campo 'tokenValue' é obrigatório."
-                                },
-                                {
-                                  "error": "400-VLD-124",
-                                  "message": "Campo 'channel' é obrigatório."
-                                },
-                                {
-                                  "error": "400-VLD-125",
-                                  "message": "Campo 'locale' é obrigatório."
-                                }
-                              ]}
+                               "value": {
+                                  "errors": [
+                                     {
+                                        "error": "400-VLD-123",
+                                        "message": "Campo 'tokenValue' é obrigatório."
+                                     },
+                                     {
+                                        "error": "400-VLD-124",
+                                        "message": "Campo 'channel' é obrigatório."
+                                     },
+                                     {
+                                        "error": "400-VLD-125",
+                                        "message": "Campo 'locale' é obrigatório."
+                                     }
+                                  ]
+                               }
                             },
                             "cart-400-02": {
                                "summary": "exemplo 400 com erros de validação e de Regras de Negócio",
                                "value": {
-                                "errors": [
-                                  {
-                                    "error": "400-VLD-123",
-                                    "message": "Campo 'tokenValue' é obrigatório."
-                                  },
-                                  {
-                                    "error": "400-RNG-224",
-                                    "message": "No endereço de entrega, o CEP deve pertencer ao município informado."
-                                  },
-                                  {
-                                    "error": "400-RNG-225",
-                                    "message": "São permitidos endereços de cobrança somente no Brasil."
-                                  }
-                                ]
-                              }
+                                  "errors": [
+                                     {
+                                        "error": "400-VLD-123",
+                                        "message": "Campo 'tokenValue' é obrigatório."
+                                     },
+                                     {
+                                        "error": "400-RNG-224",
+                                        "message": "No endereço de entrega, o CEP deve pertencer ao município informado."
+                                     },
+                                     {
+                                        "error": "400-RNG-225",
+                                        "message": "São permitidos endereços de cobrança somente no Brasil."
+                                     }
+                                  ]
+                               }
                             }
                          }
                       }
@@ -309,7 +355,7 @@
              "description": "Este endpoint permite adicionar um novo item no carrinho.",
              "operationId": "cartAddItem",
              "requestBody": {
-                "description": "Descrição de um item. The smallest required amount of data is a product code and quantity for a simple product. Configurable products will require an additional `variant_code` or `options` field, but never both.",
+                "description": "Descrição de um item a ser adicionado no carrinho. É requerido um quandidade mínima de informações, cono 'productCode', 'quantity' e também informações sobre a variação do item. A configuração do produto requer o campo adicional `variant_code` ou `options`, mas nunca ambos.",
                 "required": true,
                 "content": {
                    "application/json": {
@@ -321,11 +367,25 @@
              },
              "responses": {
                 "201": {
-                   "description": "Item has been added to the cart",
+                   "description": "Todos os itens foram adicionados ao carrinho.",
                    "content": {
                       "application/json": {
                          "schema": {
-                            "$ref": "#/components/schemas/Cart"
+                            "type": "object",
+                            "properties": {
+                               "identifier": {
+                                  "type": "string",
+                                  "description": "identificador do item adicionado no carrinho de compras."
+                               }
+                            }
+                         },
+                         "examples": {
+                            "201-default": {
+                               "summary": "Exemplo de retorno com o identificador gerado",
+                               "value": {
+                                  "identifier": "05f95aed-053e-458c-860d-fee8941e3ea8"
+                               }
+                            }
                          }
                       }
                    }
@@ -336,9 +396,68 @@
                       "application/json": {
                          "schema": {
                             "$ref": "#/components/schemas/GeneralError"
+                         },
+                         "examples": {
+                            "400-01": {
+                               "summary": "400-1",
+                               "value": {
+                                  "errors": [
+                                     {
+                                        "error": "400-VLD-123",
+                                        "message": "Campo 'productCode' é obrigatório."
+                                     },
+                                     {
+                                        "error": "400-VLD-124",
+                                        "message": "Campo 'quantity' é obrigatório."
+                                     }                                    
+                                  ]
+                               }
+                            },
+                            "400-02": {
+                               "summary": "400-2",
+                               "value": {
+                                  "errors": [
+                                     {
+                                        "error": "400-VLD-123",
+                                        "message": "Campo 'productCode' é obrigatório."
+                                     },
+                                     {
+                                        "error": "400-RNG-128",
+                                        "message": "Campo 'quantity' deve ser maior ou igual a 1."
+                                     }                                    
+                                  ]
+                               }
+                            },
+                            "400-03": {
+                               "summary": "400-3",
+                               "value": {
+                                  "errors": [                                    
+                                     {
+                                        "error": "400-RNG-128",
+                                        "message": "Campo 'quantity' deve ser maior ou igual a 1."
+                                     },
+                                     {
+                                        "error": "400-RNG-129",
+                                        "message": "Campo 'variantCode' não pode ser informado ao mesmo tempo que o array 'options'."
+                                     }                                    
+                                  ]
+                               }
+                            }
                          }
                       }
                    }
+                },
+                "401": {
+                   "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+                },
+                "403": {
+                   "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+                },
+                "404": {
+                   "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+                },
+                "500": {
+                   "description": "Erro interno no servidor."
                 }
              }
           }
@@ -353,11 +472,11 @@
              "tags": [
                 "cart"
              ],
-             "summary": "Add multiple items to your cart.",
-             "description": "This endpoint will allow you to add a new item to your cart.",
+             "summary": "Adiciona múltiplos itens ao carrinho de compras.",
+             "description": "Este endpoint permite a adições de novos itens ao carrinho de compras.",
              "operationId": "cartPutItems",
              "requestBody": {
-                "description": "Description of items. The same rules applied to each of the array values as to the previous point.",
+                "description": "Descrição dos itens. As mesmas regras do endpoint anterior são aplicadas a cada item do conjunto de items.",
                 "required": true,
                 "content": {
                    "application/json": {
@@ -369,7 +488,7 @@
              },
              "responses": {
                 "201": {
-                   "description": "Item has been added to the cart",
+                   "description": "Os itens foram adicionados ao carrinho. Neste caso faz mais sentido retornar todas as configurações do carrinho de compras.",
                    "content": {
                       "application/json": {
                          "schema": {
@@ -379,11 +498,28 @@
                    }
                 },
                 "400": {
-                   "description": "Invalid input, validation failed.",
+                   "description": "Entrada inválida, validação falhou.",
                    "content": {
                       "application/json": {
                          "schema": {
                             "$ref": "#/components/schemas/GeneralError"
+                         },
+                         "examples": {
+                            "400-01": {
+                               "summary": "Erros de validação e de negócio",
+                               "value": {
+                                  "errors": [
+                                    {
+                                      "error": "400-RNG-128",
+                                      "message": "No item 1, o campo 'quantidade' é obrigatório e deve ser igual ou maior a 1."
+                                    },
+                                    {
+                                     "error": "400-RNG-129",
+                                     "message": "No item 3, o campo 'quantidade' é obrigatório e deve ser igual ou maior a 1."
+                                   }
+                                  ]
+                                }
+                            }
                          }
                       }
                    }
@@ -397,23 +533,17 @@
                 "$ref": "#/components/parameters/CartToken"
              },
              {
-                "name": "identifier",
-                "in": "path",
-                "description": "Identifier of a specific item. Can be found in the cart summary.",
-                "required": true,
-                "schema": {
-                   "type": "string"
-                }
+                "$ref": "#/components/parameters/ItemIdentifier"
              }
           ],
           "put": {
              "tags": [
                 "cart"
              ],
-             "summary": "Change quantity of a cart item.",
+             "summary": "Mudar a quantidade do item no carrinho.",
              "operationId": "cartUpdateItem",
              "requestBody": {
-                "description": "Dados a serem atualizados doo Pet",
+                "description": "Definição da nova quantidade do item especificado.",
                 "required": true,
                 "content": {
                    "application/json": {
@@ -425,10 +555,10 @@
              },
              "responses": {
                 "204": {
-                   "description": "Quantity has been changed."
+                   "description": "Quantidade foi modificada."
                 },
                 "400": {
-                   "description": "Invalid input, validation failed.",
+                   "description": "Entrada inválida, validação falhou.",
                    "content": {
                       "application/json": {
                          "schema": {
@@ -436,6 +566,18 @@
                          }
                       }
                    }
+                },
+                "401": {
+                   "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+                },
+                "403": {
+                   "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+                },
+                "404": {
+                   "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+                },
+                "500": {
+                   "description": "Erro interno no servidor."
                 }
              }
           },
@@ -443,22 +585,47 @@
              "tags": [
                 "cart"
              ],
-             "summary": "Remove cart item.",
+             "summary": "Remover o item do carrinho de compras.",
              "operationId": "cartDeleteItem",
-             "description": "This endpoint will remove one item from your cart",
+             "description": "Este endpoint irá remover o item do carrinho de compras.",
              "responses": {
                 "204": {
-                   "description": "Cart item has been removed."
+                   "description": "Sucesso. O item do carrinho de compras foi removido."
                 },
                 "400": {
-                   "description": "Invalid input (E.g. token has not been found)",
+                   "description": "Entreda inválida.",
                    "content": {
                       "application/json": {
                          "schema": {
                             "$ref": "#/components/schemas/GeneralError"
+                         },
+                         "examples": {
+                            "400-1":{
+                               "summary": "400-1",
+                               "value": {
+                                  "errors": [
+                                    {
+                                      "error": "400-RNG-716",
+                                      "message": "O pagamento deste carrinho já foi processado, não é possível remover itens existentes."
+                                    }
+                                  ]
+                                }
+                            }
                          }
                       }
                    }
+                },
+                "401": {
+                   "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+                },
+                "403": {
+                   "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+                },
+                "404": {
+                   "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+                },
+                "500": {
+                   "description": "Erro interno no servidor."
                 }
              }
           }
@@ -473,31 +640,22 @@
              "tags": [
                 "cart"
              ],
-             "summary": "Estimates the shipping cost of the cart",
+             "summary": "Estimativa do custo de entrega para o carrinho de compras.",
              "operationId": "estimateShippingCost",
              "parameters": [
                 {
-                   "name": "countryCode",
+                   "name": "CEP",
                    "in": "query",
-                   "description": "Shipping Country",
+                   "description": "Código de Endereço Postal (CEP), com 8 dígitos, onde a entrega será efetuada.",
                    "required": true,
                    "schema": {
-                      "type": "string"
-                   }
-                },
-                {
-                   "name": "provinceCode",
-                   "in": "query",
-                   "description": "Province to ship to",
-                   "required": true,
-                   "schema": {
-                      "type": "string"
+                      "type": "number"
                    }
                 }
              ],
              "responses": {
                 "200": {
-                   "description": "Price was calculated",
+                   "description": "Preço calculado",
                    "content": {
                       "application/json": {
                          "schema": {
@@ -507,14 +665,39 @@
                    }
                 },
                 "400": {
-                   "description": "Invalid input (E.g. token has not been found)",
+                   "description": "Entrada inválida.",
                    "content": {
                       "application/json": {
                          "schema": {
                             "$ref": "#/components/schemas/GeneralError"
+                         },
+                         "examples": {
+                            "400-1":{
+                               "summary": "400-1",
+                               "value": {
+                                  "errors": [
+                                    {
+                                      "error": "400-RNG-592",
+                                      "message": "Obrigatório adicionar pelo menos 1 item no carrinho de compras para efetuar esta operação."
+                                    }
+                                  ]
+                                }
+                            }
                          }
                       }
                    }
+                },
+                "401": {
+                   "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+                },
+                "403": {
+                   "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+                },
+                "404": {
+                   "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+                },
+                "500": {
+                   "description": "Erro interno no servidor."
                 }
              }
           }
@@ -529,11 +712,11 @@
              "tags": [
                 "cart"
              ],
-             "summary": "Add a promotion coupon code to the cart.",
-             "description": "This endpoint will allow you to add a promotion coupon code to the cart and receive the discount.",
+             "summary": "Adiciona um código de cupom promocional ao carrinho.",
+             "description": "Este endpoint permite adicionar um código de cupom promocional ao carrinho de compras, podendo gerar descontos em produtos específicos e/ou no valor total da compra.",
              "operationId": "cartAddCoupon",
              "requestBody": {
-                "description": "XXXXXXXXX",
+                "description": "Código do cupom promocional a ser adicionado no carrinho.",
                 "required": true,
                 "content": {
                    "application/json": {
@@ -545,17 +728,42 @@
              },
              "responses": {
                 "204": {
-                   "description": "Coupon has been assigned to the cart."
+                   "description": "Cupom foi vinculado ao carrinho de compras."
                 },
                 "400": {
-                   "description": "Invalid input, validation failed.",
+                   "description": "Entrada inválida.",
                    "content": {
                       "application/json": {
                          "schema": {
                             "$ref": "#/components/schemas/GeneralError"
+                         },
+                         "examples": {
+                            "400-1":{
+                               "summary": "400-1",
+                               "value": {
+                                  "errors": [
+                                    {
+                                      "error": "400-RNG-928",
+                                      "message": "O mesmo cupom não pode ser adicionado em duplicidade no mesmo carrinho."
+                                    }
+                                  ]
+                                }
+                            }
                          }
                       }
                    }
+                },
+                "401": {
+                   "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+                },
+                "403": {
+                   "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+                },
+                "404": {
+                   "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+                },
+                "500": {
+                   "description": "Erro interno no servidor."
                 }
              }
           },
@@ -563,22 +771,47 @@
              "tags": [
                 "cart"
              ],
-             "summary": "Remove a promotion coupon code from the cart.",
-             "description": "This endpoint will allow you to remove a promotion coupon code from the cart.",
+             "summary": "Remover o código de cupom promocional do carrinho de compras.",
+             "description": "Este endpoint permite remover o cupom promocional do carrinho de compras.",
              "operationId": "cartRemoveCoupon",
              "responses": {
                 "204": {
-                   "description": "Coupon has been removed from the cart."
+                   "description": "Sucesso. Cupom foi removido do carrinho."
                 },
                 "400": {
-                   "description": "Invalid input, validation failed.",
+                   "description": "Entrada inválida, validação falhou.",
                    "content": {
                       "application/json": {
                          "schema": {
                             "$ref": "#/components/schemas/GeneralError"
+                         },
+                         "examples": {
+                            "400-01": {
+                               "summary": "Erros de regra de negócio",
+                               "value": {
+                                  "errors": [
+                                    {
+                                      "error": "400-RNG-872",
+                                      "message": "Não é possível remover código de cupom promocional pois o carrinho de compras já está com pagamento confirmado."
+                                    }
+                                  ]
+                                }
+                            }
                          }
                       }
                    }
+                },
+                "401": {
+                   "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+                },
+                "403": {
+                   "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+                },
+                "404": {
+                   "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+                },
+                "500": {
+                   "description": "Erro interno no servidor."
                 }
              }
           }
@@ -590,6 +823,15 @@
              "name": "token",
              "in": "path",
              "description": "Token de identificação de um carrinho.",
+             "required": true,
+             "schema": {
+                "type": "string"
+             }
+          },
+          "ItemIdentifier": {
+             "name": "identifier",
+             "in": "path",
+             "description": "Identificação de um item do carrinho.",
              "required": true,
              "schema": {
                 "type": "string"
@@ -685,14 +927,14 @@
           },
           "AddCouponRequest": {
              "type": "object",
-             "description": "Body of request used to add promotion coupon code to cart.",
+             "description": "Corpo da requisição usado para adicionar um cupom promocional no carrinho de compras.",
              "required": [
                 "coupon"
              ],
              "properties": {
                 "coupon": {
                    "type": "string",
-                   "example": "BANANAS"
+                   "example": "DESCONTO-NATAL-TOP"
                 }
              }
           },
@@ -1272,13 +1514,13 @@
              "type": "object",
              "properties": {
                 "current": {
-                   "description": "Calculated price for given channel. Price is stored as an integer, so by default it should be divided by 100.",
-                   "type": "integer",
-                   "example": 1000
+                   "description": "Preço calculado para determinado canal. O preço é armazenado como um número decimal.",
+                   "type": "number",
+                   "example": 100.93
                 },
                 "currency": {
                    "type": "string",
-                   "example": "PLN"
+                   "example": "BRL"
                 }
              }
           },
