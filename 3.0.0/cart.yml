@@ -140,7 +140,7 @@ paths:
                       {
                         "error": "400-VLD-125",
                         "message": "Campo 'locale' é obrigatório."
-                      },
+                      }
                     ]
                   }
                 cart-400-02:
@@ -158,7 +158,7 @@ paths:
                       {
                         "error": "400-RNG-225",
                         "message": "São permitidos endereços de cobrança somente no Brasil."
-                      },
+                      }
                     ]
                   }
         401:
@@ -224,7 +224,7 @@ paths:
                       {
                         "error": "400-RNG-230",
                         "message": "Este carrinho de compras já foi eliminado e seu estado não pode ser modificado."
-                      },
+                      }
                     ]
                   }
         404:
