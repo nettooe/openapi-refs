@@ -25,11 +25,10 @@ servers:
 
 tags:
 - name: "pet"
-  description: "Tudo sobre seus animais de estimação"
+  description: "Todos os endpoints relacionados aos animais de estimação da loja."
   externalDocs:
     description: "Para saber mais"
     url: "https://minhaempresa.atlassian.net/wiki/spaces/ATD"
-
 
 paths:
   /pet:
@@ -102,6 +101,21 @@ paths:
                 pet-400-02:
                   summary: exemplo 400 com código 400102
                   value: {"code":"400101", "description":"field 'birthdate' is required"}
+
+    get:
+      tags:
+      - "pet"
+      summary: "Obter pets"
+      description: 'Obter uma lista paginada de animais de estimação cadastrados'
+      operationId: "getPet"
+      responses:
+        '200':
+          description: "Lista de retorno paginada"
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/Pet"
+
   /pet/{petId}:
     put:
       tags:
@@ -170,6 +184,7 @@ components:
         id:
           type: "integer"
           format: "int64"
+          example: 123
         name:
           type: "string"
           example: "doggie"
