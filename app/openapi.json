@@ -552,14 +552,14 @@
                "$ref": "#/components/parameters/ItemIdentifier"
             }
          ],
-         "put": {
+         "patch": {
             "tags": [
                "cart"
             ],
-            "summary": "Mudar a quantidade do item no carrinho.",
+            "summary": "Atualiza parcialmente o item no carrinho.",
             "operationId": "cartUpdateItem",
             "requestBody": {
-               "description": "Definição da nova quantidade do item especificado.",
+               "description": "Neste exemplo de atualização parcial, estamos modificando somente a quantidade do item especificado.",
                "required": true,
                "content": {
                   "application/json": {
@@ -724,7 +724,7 @@
                "$ref": "#/components/parameters/CartToken"
             }
          ],
-         "put": {
+         "post": {
             "tags": [
                "cart"
             ],
@@ -743,8 +743,67 @@
                }
             },
             "responses": {
-               "204": {
+               "201": {
                   "description": "Cupom foi vinculado ao carrinho de compras."
+               },
+               "400": {
+                  "description": "Entrada inválida.",
+                  "content": {
+                     "application/json": {
+                        "schema": {
+                           "$ref": "#/components/schemas/GeneralError"
+                        },
+                        "examples": {
+                           "400-1": {
+                              "summary": "400-1",
+                              "value": {
+                                 "errors": [
+                                    {
+                                       "error": "400-RNG-928",
+                                       "message": "O mesmo cupom não pode ser adicionado em duplicidade no mesmo carrinho."
+                                    }
+                                 ]
+                              }
+                           }
+                        }
+                     }
+                  }
+               },
+               "401": {
+                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
+               },
+               "403": {
+                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
+               },
+               "404": {
+                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
+               },
+               "500": {
+                  "description": "Erro interno no servidor."
+               }
+            }
+         },
+         "put": {
+            "tags": [
+               "cart"
+            ],
+            "summary": "Atualiza o cupom promocional do carrinho.",
+            "description": "Este endpoint permite atualizar o código de cupom promocional ao carrinho de compras, podendo gerar descontos em produtos específicos e/ou no valor total da compra.",
+            "operationId": "cartUpdtCoupon",
+            "requestBody": {
+               "description": "Código do cupom promocional a ser atualizado no carrinho.",
+               "required": true,
+               "content": {
+                  "application/json": {
+                     "schema": {
+                        "$ref": "#/components/schemas/AddCouponRequest"
+                     }
+                  }
+               }
+            },
+            "responses": {
+               "204": {
+                  "description": "Cupom foi atualizado no carrinho de compras."
                },
                "400": {
                   "description": "Entrada inválida.",
