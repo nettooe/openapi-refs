@@ -1,9 +1,9 @@
 {
    "openapi": "3.0.0",
    "info": {
-      "title": "Cart API",
+      "title": "Product API",
       "version": "1.0.0",
-      "description": "Cart API documentation",
+      "description": "Documentação da API de Produtos",
       "termsOfService": "https://github.com/OAI/OpenAPI-Specification/blob/main/CODE_OF_CONDUCT.md",
       "contact": {
          "name": "Fulano de Tal",
@@ -67,27 +67,11 @@
    ],
    "tags": [
       {
-         "name": "taxons",
-         "description": "Todas as ações relacionadas à hierarquia de categoria de produtos.",
-         "externalDocs": {
-            "description": "Saiba mais",
-            "url": "https://minhaempresa.net/wiki/api/taxons"
-         }
-      },
-      {
          "name": "products",
          "description": "Todas as ações relacionadas a produtos.",
          "externalDocs": {
             "description": "Saiba mais",
             "url": "https://minhaempresa.net/wiki/api/products"
-         }
-      },
-      {
-         "name": "cart",
-         "description": "Todas as ações relacionadas a carrinho de compras.",
-         "externalDocs": {
-            "description": "Saiba mais",
-            "url": "https://minhaempresa.net/wiki/api/cart"
          }
       },
       {
@@ -136,888 +120,67 @@
             }
          }
       },
-      "/carts": {
-         "post": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Gravar um novo carrinho de compras.",
-            "description": "\nEste endpoint permite criar um novo carrinho. É necessário respeitar os critérios para gravação:\n<ul>\n<li>campo \"tokenValue\" é obrigatório;</li>\n<li>campo \"channel\" é obrigatório;</li>\n<li>campo \"locale\" é obrigatório;</li>\n</ul>\n\nSe o array de \"items\" for diferente de vazio, então são aplicadas validações em cada item. Neste caso, considere as mesma validações realizadas no endpoint \"POST /carts/{token}/items\"\n",
-            "operationId": "cartPickUp",
-            "parameters": [
-               {
-                  "name": "request_id",
-                  "in": "header",
-                  "description": "Identificador da requisição, utilizado para realizaar tracing das requisições.",
-                  "required": true,
-                  "schema": {
-                     "type": "string"
-                  },
-                  "examples": {
-                     "req_id-01": {
-                        "summary": "exemplo baseado em UUID versão 4",
-                        "value": "1f33db3a-5920-4f34-8d88-6805aa5a8948"
-                     }
-                  }
-               }
-            ],
-            "requestBody": {
-               "description": "Abaixo está descrito um exemplo completo, mas a entidade (nova) pode começar somente com as propriedades obrigatórias, ou seja, um carrinho pode ser inicializado sem a propriedade \"items\" e até mesmo sem a definição da forma de pagamento.",
-               "required": true,
-               "content": {
-                  "application/json": {
-                     "schema": {
-                        "$ref": "#/components/schemas/Cart"
-                     }
-                  }
-               }
-            },
-            "responses": {
-               "201": {
-                  "description": "Esta resposta indica que o carrinho (cart) foi gravado com sucesso. Observe que, no retorno existe o campo 'tokenValue' ",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "type": "object",
-                           "properties": {
-                              "tokenValue": {
-                                 "type": "string",
-                                 "description": "token do carrinho de compras (cart) criado."
-                              }
-                           }
-                        },
-                        "examples": {
-                           "201-default": {
-                              "summary": "Exemplo de retorno com o token gerado",
-                              "value": {
-                                 "tokenValue": "1f33db3a-5920-4f34-8d88-6805aa5a8948",
-                                 "trace": "{{request.headers[trace]}}"
-                              }
-                           }
-                        }
-                     }
-                  },
-                  "links": {
-                     "GetCartByToken": {
-                        "operationId": "getCart",
-                        "parameters": {
-                           "token": "$/response.body/{token}"
-                        },
-                        "description": "O `tokenValue` retornado na resposta pode ser usado como parâmetro `token` em `GET /cart/{token}`"
-                     }
-                  },
-                  "headers": {
-                     "Location": {
-                        "description": "URI do objeto criado",
-                        "style": "simple",
-                        "schema": {
-                           "example": "/cart/1f33db3a-5920-4f34-8d88-6805aa5a8948"
-                        }
-                     }
-                  }
-               },
-               "400": {
-                  "description": "Entrada inválida",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "cart-400-01": {
-                              "summary": "exemplo 400 com diversos erros do tipo validação.",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-VLD-123",
-                                       "message": "Campo 'tokenValue' é obrigatório."
-                                    },
-                                    {
-                                       "error": "400-VLD-124",
-                                       "message": "Campo 'channel' é obrigatório."
-                                    },
-                                    {
-                                       "error": "400-VLD-125",
-                                       "message": "Campo 'locale' é obrigatório."
-                                    }
-                                 ]
-                              }
-                           },
-                           "cart-400-02": {
-                              "summary": "exemplo 400 com erros de validação e de Regras de Negócio",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-VLD-123",
-                                       "message": "Campo 'tokenValue' é obrigatório."
-                                    },
-                                    {
-                                       "error": "400-RNG-224",
-                                       "message": "No endereço de entrega, o CEP deve pertencer ao município informado."
-                                    },
-                                    {
-                                       "error": "400-RNG-225",
-                                       "message": "São permitidos endereços de cobrança somente no Brasil."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
-      "/carts/{token}": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/CartToken"
-            }
-         ],
-         "get": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Mostra o resumo de um carrinho de compras.",
-            "description": "Este endpoint retorna o resumo de um carrinho de compras e já calculado.",
-            "operationId": "cartSummarize",
-            "responses": {
-               "200": {
-                  "description": "Estado atual do carrinho de compras, com preços calculados dos itens adicionados.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/Cart"
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         },
-         "delete": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Eliminar um carrinho.",
-            "description": "This endpoint will remove the cart and all of the related cart items.",
-            "operationId": "cartDrop",
-            "responses": {
-               "204": {
-                  "description": "Carrinho foi eliminado."
-               },
-               "400": {
-                  "description": "Entrada inválida",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "cart-400-05": {
-                              "summary": "exemplo com erros possíveis."
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
-      "/carts/{token}/items": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/CartToken"
-            }
-         ],
-         "post": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Adicionar iten no carrinho.",
-            "description": "Este endpoint permite adicionar um novo item no carrinho.",
-            "operationId": "cartAddItem",
-            "requestBody": {
-               "description": "Descrição de um item a ser adicionado no carrinho. É requerido um quandidade mínima de informações, cono 'productCode', 'quantity' e também informações sobre a variação do item. A configuração do produto requer o campo adicional `variant_code` ou `options`, mas nunca ambos.",
-               "required": true,
-               "content": {
-                  "application/json": {
-                     "schema": {
-                        "$ref": "#/components/schemas/PutItemToCartRequest"
-                     }
-                  }
-               }
-            },
-            "responses": {
-               "201": {
-                  "description": "Todos os itens foram adicionados ao carrinho.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "type": "object",
-                           "properties": {
-                              "identifier": {
-                                 "type": "string",
-                                 "description": "identificador do item adicionado no carrinho de compras."
-                              }
-                           }
-                        },
-                        "examples": {
-                           "201-default": {
-                              "summary": "Exemplo de retorno com o identificador gerado",
-                              "value": {
-                                 "identifier": "05f95aed-053e-458c-860d-fee8941e3ea8"
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "400": {
-                  "description": "Invalid input, validation failed.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-01": {
-                              "summary": "400-1",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-VLD-123",
-                                       "message": "Campo 'productCode' é obrigatório."
-                                    },
-                                    {
-                                       "error": "400-VLD-124",
-                                       "message": "Campo 'quantity' é obrigatório."
-                                    }
-                                 ]
-                              }
-                           },
-                           "400-02": {
-                              "summary": "400-2",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-VLD-123",
-                                       "message": "Campo 'productCode' é obrigatório."
-                                    },
-                                    {
-                                       "error": "400-RNG-128",
-                                       "message": "Campo 'quantity' deve ser maior ou igual a 1."
-                                    }
-                                 ]
-                              }
-                           },
-                           "400-03": {
-                              "summary": "400-3",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-RNG-128",
-                                       "message": "Campo 'quantity' deve ser maior ou igual a 1."
-                                    },
-                                    {
-                                       "error": "400-RNG-129",
-                                       "message": "Campo 'variantCode' não pode ser informado ao mesmo tempo que o array 'options'."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
-      "/carts/{token}/multiple-items": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/CartToken"
-            }
-         ],
-         "post": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Adiciona múltiplos itens ao carrinho de compras.",
-            "description": "Este endpoint permite a adições de novos itens ao carrinho de compras.",
-            "operationId": "cartPutItems",
-            "requestBody": {
-               "description": "Descrição dos itens. As mesmas regras do endpoint anterior são aplicadas a cada item do conjunto de items.",
-               "required": true,
-               "content": {
-                  "application/json": {
-                     "schema": {
-                        "$ref": "#/components/schemas/PutItemsToCartRequest"
-                     }
-                  }
-               }
-            },
-            "responses": {
-               "201": {
-                  "description": "Os itens foram adicionados ao carrinho. Neste caso faz mais sentido retornar todas as configurações do carrinho de compras.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/Cart"
-                        }
-                     }
-                  }
-               },
-               "400": {
-                  "description": "Entrada inválida, validação falhou.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-01": {
-                              "summary": "Erros de validação e de negócio",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-RNG-128",
-                                       "message": "No item 1, o campo 'quantidade' é obrigatório e deve ser igual ou maior a 1."
-                                    },
-                                    {
-                                       "error": "400-RNG-129",
-                                       "message": "No item 3, o campo 'quantidade' é obrigatório e deve ser igual ou maior a 1."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-         }
-      },
-      "/carts/{token}/items/{identifier}": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/CartToken"
-            },
-            {
-               "$ref": "#/components/parameters/ItemIdentifier"
-            }
-         ],
-         "put": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Mudar a quantidade do item no carrinho.",
-            "operationId": "cartUpdateItem",
-            "requestBody": {
-               "description": "Definição da nova quantidade do item especificado.",
-               "required": true,
-               "content": {
-                  "application/json": {
-                     "schema": {
-                        "$ref": "#/components/schemas/ChangeItemQuantityRequest"
-                     }
-                  }
-               }
-            },
-            "responses": {
-               "204": {
-                  "description": "Quantidade foi modificada."
-               },
-               "400": {
-                  "description": "Entrada inválida, validação falhou.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         },
-         "delete": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Remover o item do carrinho de compras.",
-            "operationId": "cartDeleteItem",
-            "description": "Este endpoint irá remover o item do carrinho de compras.",
-            "responses": {
-               "204": {
-                  "description": "Sucesso. O item do carrinho de compras foi removido."
-               },
-               "400": {
-                  "description": "Entreda inválida.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-1": {
-                              "summary": "400-1",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-RNG-716",
-                                       "message": "O pagamento deste carrinho já foi processado, não é possível remover itens existentes."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
-      "/carts/{token}/estimated-shipping-cost": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/CartToken"
-            }
-         ],
-         "get": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Estimativa do custo de entrega para o carrinho de compras.",
-            "operationId": "estimateShippingCost",
-            "parameters": [
-               {
-                  "name": "CEP",
-                  "in": "query",
-                  "description": "Código de Endereço Postal (CEP), com 8 dígitos, onde a entrega será efetuada.",
-                  "required": true,
-                  "schema": {
-                     "type": "number"
-                  }
-               }
-            ],
-            "responses": {
-               "200": {
-                  "description": "Preço calculado",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/EstimatedShippingCost"
-                        }
-                     }
-                  }
-               },
-               "400": {
-                  "description": "Entrada inválida.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-1": {
-                              "summary": "400-1",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-RNG-592",
-                                       "message": "Obrigatório adicionar pelo menos 1 item no carrinho de compras para efetuar esta operação."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
-      "/carts/{token}/coupon": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/CartToken"
-            }
-         ],
-         "put": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Adiciona um código de cupom promocional ao carrinho.",
-            "description": "Este endpoint permite adicionar um código de cupom promocional ao carrinho de compras, podendo gerar descontos em produtos específicos e/ou no valor total da compra.",
-            "operationId": "cartAddCoupon",
-            "requestBody": {
-               "description": "Código do cupom promocional a ser adicionado no carrinho.",
-               "required": true,
-               "content": {
-                  "application/json": {
-                     "schema": {
-                        "$ref": "#/components/schemas/AddCouponRequest"
-                     }
-                  }
-               }
-            },
-            "responses": {
-               "204": {
-                  "description": "Cupom foi vinculado ao carrinho de compras."
-               },
-               "400": {
-                  "description": "Entrada inválida.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-1": {
-                              "summary": "400-1",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-RNG-928",
-                                       "message": "O mesmo cupom não pode ser adicionado em duplicidade no mesmo carrinho."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         },
-         "delete": {
-            "tags": [
-               "cart"
-            ],
-            "summary": "Remover o código de cupom promocional do carrinho de compras.",
-            "description": "Este endpoint permite remover o cupom promocional do carrinho de compras.",
-            "operationId": "cartRemoveCoupon",
-            "responses": {
-               "204": {
-                  "description": "Sucesso. Cupom foi removido do carrinho."
-               },
-               "400": {
-                  "description": "Entrada inválida, validação falhou.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-01": {
-                              "summary": "Erros de regra de negócio",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-RNG-872",
-                                       "message": "Não é possível remover código de cupom promocional pois o carrinho de compras já está com pagamento confirmado."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Não foi encontrado um carrinho de compras com o token informado."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
+
       "/product-latest": {
          "parameters": [
             {
-               "$ref": "#/components/parameters/Locale"
+               "name": "locale",
+               "description": "Locale in which products should be shown.",
+               "in": "query",
+               "required": false,
+               "schema":{
+                  "type": "string"
+               }
             },
             {
-               "$ref": "#/components/parameters/Limit"
-            },
-            {
-               "$ref": "#/components/parameters/Start"
+               "name": "limit",
+               "description": "Number of expected products per page.",
+               "in": "query",
+               "required": false,
+               "schema":{
+                  "type": "integer"
+               }
             }
          ],
          "get": {
-            "tags": [
+            "tags":[
                "products"
             ],
-            "summary": "Mostrar últimos produtos.",
-            "description": "Este endpoint retornará um lista dos produtos mais recentes.",
+            "summary": "Show latest products.",
+            "description": "This endpoint will return an array of latest products.",
             "operationId": "latestProducts",
+
             "responses": {
-               "200": {
-                  "description": "Listagem dos últimos produtos apresentados de forma paginada.",
+               "200":{
+                  "description": "Array of latest products.",
                   "content": {
                      "application/json": {
                         "schema": {
                            "type": "array",
                            "items": {
                               "type": "object",
-                              "$ref": "#/components/schemas/PageOfProduct"
+                              "$ref": "#/components/schemas/Product"
                            }
                         }
                      }
                   }
-               },
-               "400": {
-                  "description": "Entrada inválida, validação falhou.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-01": {
-                              "summary": "Erros de validação",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-VLD-285",
-                                       "message": "É obrigatório informar uma localidade (campo 'locale') para consultar a lista de produtos."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Esta localidade não é reconhecida por este serviço."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
                }
             }
          }
-      },
-      "/taxons": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/Locale"
-            },
-            {
-               "$ref": "#/components/parameters/Limit"
-            },
-            {
-               "$ref": "#/components/parameters/Start"
-            }
-         ],
-         "get": {
-            "tags": [
-               "taxons"
-            ],
-            "summary": "Obtém a hierarquia de categorias.",
-            "description": "Este endpoint retornará uma listagem de todas as categorias com todos os filhos (subcategorias).",
-            "operationId": "taxonTree",
-            "responses": {
-               "200": {
-                  "description": "Listagem de todas as categorias existentes.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "type": "array",
-                           "items": {
-                              "$ref": "#/components/schemas/Taxon"
-                           }
-                        }
-                     }
-                  }
-               },
-               "204":{
-                  "description": "Não existem categorias disponíveis para a localidade informada."
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
-      },
-      "/taxons/{code}": {
-         "parameters": [
-            {
-               "$ref": "#/components/parameters/Code"
-            },
-            {
-               "$ref": "#/components/parameters/Locale"
-            }
-         ],
-         "get": {
-            "tags": [
-               "taxons"
-            ],
-            "summary": "Obter os dados da categoria conforme o código.",
-            "description": "Este endpoint retornará uma categoria com o código fornecido, filhos e o nó raiz com caminho direto para essa categoria.",
-            "operationId": "taxonDetails",
-            "responses": {
-               "200": {
-                  "description": "",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "type": "object",
-                           "$ref": "#/components/schemas/TaxonDetails"
-                        }
-                     }
-                  }
-               },
-               "400": {
-                  "description": "Entrada inválida, validação falhou.",
-                  "content": {
-                     "application/json": {
-                        "schema": {
-                           "$ref": "#/components/schemas/GeneralError"
-                        },
-                        "examples": {
-                           "400-01": {
-                              "summary": "Erros de validação",
-                              "value": {
-                                 "errors": [
-                                    {
-                                       "error": "400-VLD-285",
-                                       "message": "O código de catagoria informado não pode ser consultado para esta localidade."
-                                    }
-                                 ]
-                              }
-                           }
-                        }
-                     }
-                  }
-               },
-               "401": {
-                  "description": "Não autorizado. A solicitação não foi aplicada porque não possui credenciais de autenticação válidas para o recurso de destino."
-               },
-               "403": {
-                  "description": "O servidor entendeu a solicitação, mas se recusa a autorizá-la. Provavelmente o solicitante não têm autorização para esta ação."
-               },
-               "404": {
-                  "description": "Entrada inválida. Código fornecido não existe."
-               },
-               "500": {
-                  "description": "Erro interno no servidor."
-               }
-            }
-         }
+                  
       }
+
+
+
+
+
+
+
+
+
+
+
+
    },
    "components": {
       "parameters": {
@@ -1034,42 +197,6 @@
             "name": "identifier",
             "in": "path",
             "description": "Identificação de um item do carrinho.",
-            "required": true,
-            "schema": {
-               "type": "string"
-            }
-         },
-         "Locale": {
-            "name": "locale",
-            "description": "Localidade em que os produtos serão exibidos. (Ex.: AppMobile, WebApp, batch)",
-            "in": "query",
-            "required": false,
-            "schema": {
-               "type": "string"
-            }
-         },
-         "Limit": {
-            "name": "limit",
-            "description": "Número de produtos retornados por página.",
-            "in": "query",
-            "required": false,
-            "schema": {
-               "type": "integer"
-            }
-         },
-         "Start": {
-            "name": "start",
-            "description": "Índice do registro a ser apresentado na primeira página.",
-            "in": "query",
-            "required": false,
-            "schema": {
-               "type": "integer"
-            }
-         },
-         "Code": {
-            "name": "code",
-            "description": "Código da categoria de produtos.",
-            "in": "path",
             "required": true,
             "schema": {
                "type": "string"
@@ -1430,30 +557,6 @@
                }
             }
          },
-         "PageOfProduct": {
-            "type": "object",
-            "description": "Lista de paginada de Produtos",
-            "properties": {
-               "limit": {
-                  "type": "integer",
-                  "example": 10
-               },
-               "size": {
-                  "type": "integer",
-                  "example": 5
-               },
-               "start": {
-                  "type": "integer",
-                  "example": 20
-               },
-               "results": {
-                  "type": "array",
-                  "items": {
-                     "$ref": "#/components/schemas/Product"
-                  }
-               }
-            }
-         },
          "Product": {
             "type": "object",
             "description": "Product with its basic information, variants, attributes, association and images.",
@@ -1587,23 +690,23 @@
             "properties": {
                "code": {
                   "type": "string",
-                  "example": "CATEGORIA_CODE_123"
+                  "example": "CATEGORIES_CODE"
                },
                "name": {
                   "type": "string",
-                  "example": "Categorias"
+                  "example": "Categories"
                },
                "slug": {
                   "type": "string",
-                  "example": "categorias"
+                  "example": "categories"
                },
                "description": {
                   "type": "string",
-                  "example": "Categoria geral para todos os produtos."
+                  "example": "General category for all products."
                },
                "children": {
                   "type": "array",
-                  "description": "Baseado nesta árvore, pode ser construído um caminho de pão na interface gráfica. Por outro lado (exemplo: apresentar a hierarquia das categorias) filhos conterão todos os filhos de determinada categoria.",
+                  "description": "Based on this tree one can build a breadcrumb on a frontend. Otherwise (e.g. presenting a tree of all taxons) children will contain all children of given taxon.",
                   "items": {
                      "$ref": "#/components/schemas/Taxon"
                   }
