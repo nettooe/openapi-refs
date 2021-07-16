@@ -7,8 +7,8 @@ pipeline {
                 docker { image 'dwdraju/alpine-curl-jq' }
             }
             steps{
-                sh "NOME=$(curl https://swapi.dev/api/people/1 | jq '.name')"
-                sh "echo $NOME"
+                sh "NOME=\$(curl https://swapi.dev/api/people/1 | jq '.name')"
+                sh "echo \$NOME"
             }
         }
     }
